@@ -1,0 +1,8 @@
+#!/bin/bash
+
+DOCKER_OPTS=${DOCKER_OPTS:-}
+if [[ -f .env ]]; then
+  DOCKER_OPTS="${DOCKER_OPTS} --env-file .env"
+fi
+
+docker run -t $DOCKER_OPTS --rm -v $PWD:/src terraform "$@"

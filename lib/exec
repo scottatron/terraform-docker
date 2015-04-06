@@ -1,0 +1,27 @@
+#!/bin/sh
+
+VARS_FILE="terraform.tfvars"
+VARS_FILE_EJSON="${VARS_FILE}.ejson"
+VARS_FILE_JSON="${VARS_FILE}.json"
+
+if [[ -f $VARS_FILE_EJSON ]]; then
+  EJSON_KEYDIR="/opt/ejson/keys"
+  EJSON="/usr/local/bin/ejson"
+  set -e
+  if [[ -z $EJSON_PRIVATE_KEY ]]; then
+    echo "EJSON_PRIVATE_KEY is required."
+    exit 1
+  fi
+  EJSON_PUBLIC_KEY=$(grep _public_key $VARS_FILE_EJSON | awk '{print $2}' | sed 's/[",]//g')
+  mkdir -p $EJSON_KEYDIR
+  echo $EJSON_PRIVATE_KEY > $EJSON_KEYDIR/$EJSON_PUBLIC_KEY
+  $EJSON decrypt $VARS_FILE_EJSON -o $VARS_FILE_JSON
+fi
+
+set +e
+/usr/local/bin/terraform "$@"
+STATUS=$?
+if [[ -f $VARS_FILE_EJSON ]]; then
+  rm -rf $VARS_FILE_JSON $EJSON_KEYDIR/*
+fi
+exit $STATUS
